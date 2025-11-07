@@ -6,6 +6,7 @@ from skimage.metrics import structural_similarity, mean_squared_error
 # 1. Загрузите изображение в оттенках серого sar_1_gray.jpg. 
 
 image = cv2.imread('../image_proccessing/lab1/sar_1_gray.jpg') # Просто 'sar_1_gray.jpg' не работал
+image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
 plt.imshow(image, cmap='gray')
 plt.title('1. Исходнник')
