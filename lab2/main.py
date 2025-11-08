@@ -4,6 +4,7 @@ import cv2
 import matplotlib.pyplot as plt
 from skimage.restoration import denoise_nl_means
 from skimage.metrics import structural_similarity, mean_squared_error
+import copy
 
 # Зашумить изображение при помощи шума гаусса, постоянного шума.
 # Протестировать медианный фильтр, фильтр гаусса, билатериальный фильтр, фильтр нелокальных средних с различными параметрами.
@@ -120,10 +121,7 @@ results['Нелокальные h=10'] = {'mse': mse, 'ssim': ssim}
 nimshow(im1, 'Фильтр нелокальных средних. h = 10')
 
 # Поиск лучших фильтров
-print("\n" + "="*60)
-print("РЕЗУЛЬТАТЫ СРАВНЕНИЯ:")
-print("="*60)
-
+print("\nРЕЗУЛЬТАТЫ СРАВНЕНИЯ:\n")
 best_mse = float('inf')
 best_ssim = -float('inf')
 best_filter_mse = None
@@ -141,6 +139,91 @@ for name, metrics in results.items():
         best_filter_ssim = name
 
 
-print("\nЛУЧШИЕ ФИЛЬТРЫ:\n")
+print("\nЛУЧШИЕ ФИЛЬТРЫ ДЛЯ ПОСТОЯННОГО ШУМА:\n")
+print(f" Лучший по MSE:  {best_filter_mse} (MSE = {best_mse:.2f})")
+print(f" Лучший по SSIM: {best_filter_ssim} (SSIM = {best_ssim:.4f})")
+
+
+
+# ========================
+
+noisy_image=noise_gauss.copy()
+
+# Словарь для хранения результатов
+results = {}
+
+# Медианный фильтр
+image_gauss_median = cv2.medianBlur(noisy_image, 3)
+mse, ssim = calculate_metrics(original_image, image_gauss_median)
+results['Медианный 3x3'] = {'mse': mse, 'ssim': ssim}
+nimshow(image_gauss_median, 'Медианный фильтр 3 на 3')
+
+image_gauss_median = cv2.medianBlur(noisy_image, 9)
+mse, ssim = calculate_metrics(original_image, image_gauss_median)
+results['Медианный 9x9'] = {'mse': mse, 'ssim': ssim}
+nimshow(image_gauss_median, 'Медианный фильтр 9 на 9')
+
+image_gauss_median = cv2.medianBlur(noisy_image, 15)
+mse, ssim = calculate_metrics(original_image, image_gauss_median)
+results['Медианный 15x15'] = {'mse': mse, 'ssim': ssim}
+nimshow(image_gauss_median, 'Медианный фильтр 15 на 15')
+
+# Билатериальный фильтр
+image_gauss_bilat = cv2.bilateralFilter(noisy_image,9,10,10)
+mse, ssim = calculate_metrics(original_image, image_gauss_bilat)
+results['Билатеральный d=9 σ=10'] = {'mse': mse, 'ssim': ssim}
+nimshow(image_gauss_bilat, 'Билатериальный фильтр  d=9 sigma=10')
+
+image_gauss_bilat = cv2.bilateralFilter(noisy_image,9,100,100)
+mse, ssim = calculate_metrics(original_image, image_gauss_bilat)
+results['Билатеральный d=9 σ=100'] = {'mse': mse, 'ssim': ssim}
+nimshow(image_gauss_bilat, 'Билатериальный фильтр  d=9 sigma=100')
+
+image_gauss_bilat = cv2.bilateralFilter(noisy_image,90,10,10)
+mse, ssim = calculate_metrics(original_image, image_gauss_bilat)
+results['Билатеральный d=90 σ=10'] = {'mse': mse, 'ssim': ssim}
+nimshow(image_gauss_bilat, 'Билатериальный фильтр  d=90 sigma=10')
+
+image_gauss_bilat = cv2.bilateralFilter(noisy_image,90,100,100)
+mse, ssim = calculate_metrics(original_image, image_gauss_bilat)
+results['Билатеральный d=90 σ=100'] = {'mse': mse, 'ssim': ssim}
+nimshow(image_gauss_bilat, 'Билатериальный фильтр  d=90 sigma=100')
+
+# Фильтр нелокальных средних с разными переменными
+im1 = cv2.fastNlMeansDenoising(noisy_image, None, 1000)
+mse, ssim = calculate_metrics(original_image, im1)
+results['Нелокальные h=1000'] = {'mse': mse, 'ssim': ssim}
+nimshow(im1, 'Фильтр нелокальных средних. h = 1000')
+
+im1 = cv2.fastNlMeansDenoising(noisy_image, None, 250)
+mse, ssim = calculate_metrics(original_image, im1)
+results['Нелокальные h=250'] = {'mse': mse, 'ssim': ssim}
+nimshow(im1, 'Фильтр нелокальных средних. h = 250')
+
+im1 = cv2.fastNlMeansDenoising(noisy_image, None, 10)
+mse, ssim = calculate_metrics(original_image, im1)
+results['Нелокальные h=10'] = {'mse': mse, 'ssim': ssim}
+nimshow(im1, 'Фильтр нелокальных средних. h = 10')
+
+# Поиск лучших фильтров
+print("\nРЕЗУЛЬТАТЫ СРАВНЕНИЯ:\n")
+best_mse = float('inf')
+best_ssim = -float('inf')
+best_filter_mse = None
+best_filter_ssim = None
+
+for name, metrics in results.items():
+    mse, ssim = metrics['mse'], metrics['ssim']
+    print(f"{name:25} | MSE: {mse:7.2f} | SSIM: {ssim:.4f}")
+    
+    if mse < best_mse:
+        best_mse = mse
+        best_filter_mse = name
+    if ssim > best_ssim:
+        best_ssim = ssim
+        best_filter_ssim = name
+
+
+print("\nЛУЧШИЕ ФИЛЬТРЫ ДЛЯ ШУМА ГАУССА:\n")
 print(f" Лучший по MSE:  {best_filter_mse} (MSE = {best_mse:.2f})")
 print(f" Лучший по SSIM: {best_filter_ssim} (SSIM = {best_ssim:.4f})")
